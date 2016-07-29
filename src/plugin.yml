@@ -1,0 +1,4 @@
+name: CraplezzBot
+version: 1.0
+main: me.mani.clbot.Bot
+depends: [CraplezzCore]
