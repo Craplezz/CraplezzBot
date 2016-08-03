@@ -75,7 +75,7 @@ public class MusicMenu {
      */
     public void remake(Playlist playlist, Runnable callback) {
         menus = new ArrayList<>();
-        currentPlaylist = playlist;
+        currentPlaylist = playlist != null && playlist.getName().equals("temp") ? null : playlist;
         if (playlist == null) {
             musicConnection.fetchTrackList((trackList) -> {
                 makeMenus(trackList);
