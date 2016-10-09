@@ -8,7 +8,7 @@ import me.mani.clapi.various.StreamDataParser;
 import me.mani.clbot.Bot;
 import me.mani.clcore.util.AnvilInventory;
 import me.mani.clcore.util.ItemBuilders;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -41,8 +41,6 @@ public class MusicMenu {
 
     private List<Track> currentTracklist;
     private Playlist currentPlaylist;
-    private Track currentTrack;
-    private int currentTime; // In Milliseconds
 
     private Runnable cancelRadioListener;
 
@@ -57,15 +55,6 @@ public class MusicMenu {
         searchMenu = new SearchMenu();
 
         remake(null, () -> {});
-
-        // Xp bar updater
-        Bukkit.getScheduler().runTaskTimer(Bot.getInstance(), () -> {
-            if (currentTrack != null && currentTrack.getDuration() - currentTime > 0) {
-                for (Player player : Bukkit.getOnlinePlayers())
-                    player.setExp((float) currentTime / (float) currentTrack.getDuration());
-                currentTime += 250;
-            }
-        }, 0L, 5L);
     }
 
     /**
@@ -127,7 +116,7 @@ public class MusicMenu {
             menus.get(pageIndex).open(player);
     }
 
-    private void broadcastTrackChange(Track newTrack) {
+    public void broadcastTrackChange(Track newTrack) {
         if (cancelRadioListener != null)
             cancelRadioListener.run();
         if (newTrack.getType().equals(Track.TYPE_URL)) {
@@ -242,12 +231,12 @@ public class MusicMenu {
                     inventory.setItem(index, ItemBuilders.normal(material).name(color + track.getTitle()).lore(Arrays.asList("§8by §7" + track.getArtist())).hide(ItemFlag.values()).build())
             );
             clickListeners[index] = (clickEvent) -> {
-                if (currentPlaylist == null)
+                if (currentPlaylist == null) {
                     musicConnection.pushTrackPlay(track.getUuid());
+                    Bot.getInstance().getActionBarDisplay().update(track, 0);
+                }
                 else
                     musicConnection.pushPlaylistTrackPlay(currentPlaylist.getUuid(), index);
-                currentTrack = track;
-                currentTime = 0;
                 broadcastTrackChange(track);
             };
         }
@@ -275,8 +264,7 @@ public class MusicMenu {
                         }
                         else if (clickEvent.isRightClick()) {
                             musicConnection.pushPlaylistTrackPlay(playlist.getUuid(), 0);
-                            musicConnection.fetchTrack(playlist.getEntries().get(0), (track) -> currentTrack = track);
-                            currentTime = 0;
+                            musicConnection.fetchTrack(playlist.getEntries().get(0), MusicMenu.this::broadcastTrackChange);
                         }
                     };
                 }
