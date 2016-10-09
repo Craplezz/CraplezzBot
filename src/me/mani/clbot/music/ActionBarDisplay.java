@@ -1,18 +1,25 @@
 package me.mani.clbot.music;
 
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.ProtocolManager;
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.wrappers.WrappedChatComponent;
 import me.mani.clapi.http.music.MusicConnection;
 import me.mani.clapi.http.music.data.Track;
-import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.ComponentBuilder;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * @author Overload
  * @version 1.0
  */
 public class ActionBarDisplay extends BukkitRunnable {
+
+    private static final ProtocolManager PROTOCOL_MANAGER = ProtocolLibrary.getProtocolManager();
 
     private MusicConnection musicConnection;
 
@@ -27,7 +34,14 @@ public class ActionBarDisplay extends BukkitRunnable {
     @Override
     public void run() {
         for (Player player : Bukkit.getOnlinePlayers()) {
-            player.spigot().sendMessage(ChatMessageType.ACTION_BAR, new ComponentBuilder(broadcastMessage).create());
+            PacketContainer packetContainer = PROTOCOL_MANAGER.createPacket(PacketType.Play.Server.CHAT);
+            packetContainer.getBytes().write(0, (byte) 2);
+            packetContainer.getChatComponents().write(0, WrappedChatComponent.fromText(broadcastMessage));
+            try {
+                PROTOCOL_MANAGER.sendServerPacket(player, packetContainer);
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            }
         }
 
         update(nowPlaying, currentTime + 1000);
